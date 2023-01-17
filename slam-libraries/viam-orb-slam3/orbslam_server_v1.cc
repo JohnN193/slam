@@ -22,6 +22,7 @@ using viam::common::v1::PoseInFrame;
 #define MAX_COLOR_VALUE 255
 const std::string strRGB = "/rgb";
 const std::string strDepth = "/depth";
+const std::string img_ext = ".jpeg";
 
 namespace viam {
 
@@ -346,7 +347,7 @@ std::atomic<bool> b_continue_session{true};
 
 void SLAMServiceImpl::ProcessDataOnline(ORB_SLAM3::System *SLAM) {
     std::vector<std::string> filesRGB = utils::ListFilesInDirectoryForCamera(
-        path_to_data + strRGB, ".png", camera_name);
+        path_to_data + strRGB, img_ext, camera_name);
     double fileTimeStart = yamlTime;
     // In online mode we want the most recent frames, so parse the data
     // directory with this in mind
@@ -358,7 +359,7 @@ void SLAMServiceImpl::ProcessDataOnline(ORB_SLAM3::System *SLAM) {
         BOOST_LOG_TRIVIAL(debug) << "No new files found";
         this_thread::sleep_for(frame_delay_msec);
         filesRGB = utils::ListFilesInDirectoryForCamera(path_to_data + strRGB,
-                                                        ".png", camera_name);
+                                                        img_ext, camera_name);
         first_processed_file_index = utils::FindFrameIndex(
             filesRGB, slam_mode, path_to_data, utils::FileParserMethod::Recent,
             yamlTime, &fileTimeStart);
@@ -375,7 +376,7 @@ void SLAMServiceImpl::ProcessDataOnline(ORB_SLAM3::System *SLAM) {
         while (i == -1) {
             if (!b_continue_session) return;
             filesRGB = utils::ListFilesInDirectoryForCamera(
-                path_to_data + strRGB, ".png", camera_name);
+                path_to_data + strRGB, img_ext, camera_name);
             // In online mode we want the most recent frames, so parse the
             // data directory with this in mind
             i = utils::FindFrameIndex(filesRGB, slam_mode, path_to_data,
@@ -408,7 +409,7 @@ void SLAMServiceImpl::ProcessDataOnline(ORB_SLAM3::System *SLAM) {
                 for (int fi = first_processed_file_index;
                      fi < int(filesRGB.size()) - data_buffer_size; fi++) {
                     utils::RemoveFile(path_to_data + strRGB + "/" +
-                                      filesRGB[fi] + ".png");
+                                      filesRGB[fi] + img_ext);
                     if (slam_mode == "rgbd") {
                         utils::RemoveFile(path_to_data + strDepth + "/" +
                                           filesRGB[fi] + ".png");
@@ -442,7 +443,7 @@ void SLAMServiceImpl::ProcessDataOffline(ORB_SLAM3::System *SLAM) {
     finished_processing_offline = false;
     // find all images used for our rgbd camera
     std::vector<std::string> filesRGB = utils::ListFilesInDirectoryForCamera(
-        path_to_data + strRGB, ".png", camera_name);
+        path_to_data + strRGB, img_ext, camera_name);
     if (filesRGB.size() == 0) {
         BOOST_LOG_TRIVIAL(debug) << "No files found in " << strRGB;
         return;
@@ -629,7 +630,7 @@ namespace utils {
 // returns whether the image was loaded successfully
 bool LoadRGB(std::string path_to_data, std::string filename, cv::Mat &imRGB) {
     // write out the filename for the image
-    std::string colorName = path_to_data + strRGB + "/" + filename + ".png";
+    std::string colorName = path_to_data + strRGB + "/" + filename + img_ext;
 
     // check if the rgb image exists, if it does then load in the
     // image
@@ -646,7 +647,7 @@ bool LoadRGB(std::string path_to_data, std::string filename, cv::Mat &imRGB) {
 bool LoadRGBD(std::string path_to_data, std::string filename, cv::Mat &imRGB,
               cv::Mat &imDepth) {
     // write out filenames and paths for each respective image
-    std::string colorName = path_to_data + strRGB + "/" + filename + ".png";
+    std::string colorName = path_to_data + strRGB + "/" + filename + img_ext;
     std::string depthName = path_to_data + strDepth + "/" + filename + ".png";
 
     // check if the rgb and depth image exists, if it does then load in the
